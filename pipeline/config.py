@@ -19,6 +19,7 @@ DIR_RAW_VRA = DIR_DATA / "raw" / "vra"
 DIR_RAW_AERODROMOS = DIR_DATA / "raw" / "aerodromos"
 CAMINHO_MANIFESTO = DIR_DATA / "manifesto.json"
 CAMINHO_BANCO = DIR_DATA / "anac.duckdb"
+DIR_SQL = RAIZ / "sql"
 
 # Rede
 TIMEOUT_SEGUNDOS = 60
