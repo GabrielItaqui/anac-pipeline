@@ -38,6 +38,9 @@ mais pontuais (e os mais cancelados) na aviação doméstica brasileira em 2025?
 | qualidade | Checks de dados que rodam antes dos marts e param o pipeline se falharem | Separada dos testes unitários |
 | marts | Um `.sql` por indicador, com o grão na primeira linha | Só lê a refined |
 
+Carga validada por contagem independente: 1.005.807 linhas no VRA 2025, iguais
+arquivo a arquivo à contagem direta das quebras de linha dos CSVs.
+
 ## Indicadores (marts)
 
 | Mart | Grão (uma linha = ...) |
@@ -64,6 +67,8 @@ Números medidos no arquivo de jan/2025 (89.616 linhas).
 | Mês do voo = coluna `Referência` | É a atribuição da própria ANAC, nunca vem vazia e resolve os 21 voos que vazam para fevereiro |
 | Horários tratados como horário de Brasília, inclusive em aeroportos estrangeiros | Evidência: Miami → Galeão 01:10 → 09:25 só dá a duração real da rota (~8h) se os dois horários estiverem no mesmo fuso |
 | Raw toda em VARCHAR | `Número Voo` tem zero à esquerda (`0904`); ler como número apagaria o zero |
+| Leitura com `quote=''` e `escape=''` | Nenhum arquivo usa aspas como delimitador; as aspas existentes são parte do dado (ex.: 09°52'06"S). Fixado no código para não depender da detecção automática |
+| `_carregado_em` em UTC | É metadado técnico da carga, igual ao manifesto; a regra "horário de Brasília" vale só para os horários dos voos |
 | Deduplicação por empresa + voo + origem + partida prevista, só para voos com previsão | Zero duplicatas nesses voos. Aplicar a chave nos voos sem previsão apagaria voos reais diferentes |
 | Aeródromos sem cadastro aparecem como UF "Não cadastrado" | 5 aeródromos (provavelmente privados) somam 206 voos N (0,29%). LEFT JOIN para não perder voos |
 | Check de qualidade reconcilia nosso cálculo com a coluna `Situação Chegada` da ANAC (tolerância de 30 min) | A ANAC classifica com 30 min. Bater com ela prova que o cálculo de atraso está correto |
@@ -93,3 +98,4 @@ uv run pytest --cov
 | 3 | Existe uma coluna de justificativa preenchida para os cancelamentos | `Justificativa` vem 100% vazia | Consulta agrupando por justificativa; o mart 03 foi redesenhado |
 | 4 | Filtrar `LIKE 'S%'` isola aeroportos brasileiros | Toda a América do Sul começa com S (SC = Chile, SA = Argentina...) | Lendo a descrição dos aeroportos no resultado |
 | 5 | A spec pedia "3 tentativas" com três esperas (2 s → 4 s → 8 s) | Três tentativas no total só têm duas esperas; a spec era internamente contraditória | O Claude Code apontou a ambiguidade na lista de premissas e implementou 1 tentativa + 3 novas |
+| 6 | No script de verificação da Etapa 2, o Claude Code usou `con.sql(...).fetchone()`, API de versões antigas do DuckDB | No DuckDB 2.0 as relations não têm mais `fetchone()`; é preciso usar `con.execute(...).fetchone()` | O script falhou com `AttributeError` na primeira execução; o código do pipeline já usava `execute` e não foi afetado |

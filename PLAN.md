@@ -4,21 +4,21 @@ Cada etapa = um commit (Conventional Commits). Uma etapa só começa quando os c
 de aceite da anterior passam. Regras gerais: ver CLAUDE.md. Decisões: ver README.md.
 
 ## Etapa 0 – Estrutura e documentação
-- [ ] Pastas `pipeline/`, `sql/{refined,qualidade,marts}/`, `tests/`; remover `src/`
-- [ ] README.md, CLAUDE.md, PLAN.md, .gitignore
+- [x] Pastas `pipeline/`, `sql/{refined,qualidade,marts}/`, `tests/`; remover `src/`
+- [x] README.md, CLAUDE.md, PLAN.md, .gitignore
 - **Aceite:** `uv sync` roda sem erro; `git status` não mostra nada de `data/`
 - **Commit:** `chore: estrutura inicial, README, CLAUDE.md e plano`
 
 ## Etapa 1 – Download idempotente
-- [ ] `pipeline/config.py` com as URLs (12 meses do VRA + aeródromos)
-- [ ] Download com retry/backoff para `data/raw/`
-- [ ] `data/manifesto.json` com URL, data do download, tamanho e SHA-256
+- [x] `pipeline/config.py` com as URLs (12 meses do VRA + aeródromos)
+- [x] Download com retry/backoff para `data/raw/`
+- [x] `data/manifesto.json` com URL, data do download, tamanho e SHA-256
 - **Aceite:** 13 arquivos baixados; rodar de novo não baixa nada (hash confere)
 - **Commit:** `feat(ingestao): download idempotente com manifesto e retry`
 
 ## Etapa 2 – Carga da raw
-- [ ] `raw.vra` e `raw.aerodromos`, tudo VARCHAR, com `_arquivo_origem` e `_carregado_em`
-- [ ] Leitura conforme o "Formato real" do CLAUDE.md (cabeçalho, encoding, separador)
+- [x] `raw.vra` e `raw.aerodromos`, tudo VARCHAR, com `_arquivo_origem` e `_carregado_em`
+- [x] Leitura conforme o "Formato real" do CLAUDE.md (cabeçalho, encoding, separador)
 - **Aceite:** linhas de `raw.vra` = soma das linhas dos 12 CSVs; `raw.aerodromos`
   com 496 linhas e 18 colunas + linhagem
 - **Commit:** `feat(ingestao): carga da camada raw com linhagem`

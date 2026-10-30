@@ -1,4 +1,5 @@
-"""Etapa de ingestão: download idempotente dos arquivos-fonte da ANAC com manifesto.
+"""Etapa de ingestão: download idempotente dos arquivos-fonte da ANAC com manifesto,
+seguido da carga da camada raw no DuckDB.
 
 Uso: uv run python -m pipeline.ingestao
 """
@@ -18,7 +19,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from pipeline import config
+import duckdb
+
+from pipeline import config, db
 
 log = logging.getLogger(__name__)
 
@@ -192,6 +195,105 @@ def baixar(fonte: Fonte, abrir: Abrir = urllib.request.urlopen) -> dict[str, Any
     }
 
 
+# --------------------------------------------------------------------------- carga da raw
+
+PRIMEIRA_COLUNA_VRA = "Sigla ICAO Empresa Aérea"
+PRIMEIRA_COLUNA_AERODROMOS = "Código OACI"
+
+# Opções fixas, sem depender do sniffer. quote='' porque nenhum arquivo usa aspas como
+# delimitador de campo: as que aparecem são literais (`"DIAGORAS"` no nome de aeroporto,
+# segundos em `09°52'06"S`). Sem ignore_errors: linha malformada derruba a carga.
+OPCOES_VRA = "delim=';', header=true, all_varchar=true, quote='', escape='', encoding='utf-8'"
+OPCOES_AERODROMOS = (
+    "delim=';', header=true, skip=1, all_varchar=true, quote='', escape='', encoding='latin-1'"
+)
+
+
+class ErroCarga(Exception):
+    """Arquivo fora do formato esperado: a carga para em vez de se adaptar."""
+
+
+def instante_carga() -> datetime:
+    """Instante da carga em UTC, sem fuso (coluna TIMESTAMP), sem frações de segundo."""
+    return datetime.now(UTC).replace(microsecond=0, tzinfo=None)
+
+
+def ler_cabecalho(caminho: Path) -> list[str]:
+    """Lê a primeira linha de um CSV do VRA (UTF-8, BOM descartado) e separa as colunas."""
+    with caminho.open(encoding="utf-8-sig", newline="") as f:
+        return f.readline().rstrip("\r\n").split(";")
+
+
+def conferir_cabecalhos(arquivos: list[Path]) -> list[str]:
+    """Exige que todos os arquivos tenham o cabeçalho do primeiro; devolve esse cabeçalho."""
+    referencia = ler_cabecalho(arquivos[0])
+    for arquivo in arquivos[1:]:
+        cabecalho = ler_cabecalho(arquivo)
+        if cabecalho == referencia:
+            continue
+        ausentes = [c for c in referencia if c not in cabecalho]
+        novas = [c for c in cabecalho if c not in referencia]
+        detalhe = f"ausentes: {ausentes}; novas: {novas}" if ausentes or novas else "mesmas colunas em outra ordem"
+        raise ErroCarga(f"{arquivo.name}: cabeçalho difere de {arquivos[0].name} ({detalhe})")
+    return referencia
+
+
+def _criar_tabela(
+    con: duckdb.DuckDBPyConnection,
+    tabela: str,
+    arquivos: list[Path],
+    opcoes: str,
+    primeira_coluna: str,
+    carregado_em: datetime,
+) -> dict[str, int]:
+    """Recria `tabela` com exatamente `arquivos` + linhagem; devolve linhas por arquivo."""
+    leitura = f"read_csv($arquivos, {opcoes}, filename=true)"
+    parametros = {"arquivos": [a.as_posix() for a in arquivos]}
+
+    colunas = [d[0] for d in con.execute(f"SELECT * FROM {leitura} LIMIT 0", parametros).description]
+    if colunas[0] != primeira_coluna:
+        raise ErroCarga(f"{tabela}: primeira coluna é {colunas[0]!r}, esperado {primeira_coluna!r}")
+
+    con.execute(
+        f"""
+        CREATE OR REPLACE TABLE {tabela} AS
+        SELECT * EXCLUDE (filename),
+               parse_filename(filename) AS _arquivo_origem,
+               $carregado_em::TIMESTAMP AS _carregado_em
+        FROM {leitura}
+        """,
+        parametros | {"carregado_em": carregado_em},
+    )
+    contagens = dict(con.execute(f"SELECT _arquivo_origem, count(*) FROM {tabela} GROUP BY ALL").fetchall())
+    return {a.name: contagens.get(a.name, 0) for a in arquivos}
+
+
+def carregar_vra(
+    con: duckdb.DuckDBPyConnection, arquivos: list[Path], carregado_em: datetime | None = None
+) -> dict[str, int]:
+    """Recria `raw.vra` com os CSVs mensais do VRA, depois de conferir os cabeçalhos."""
+    if not arquivos:
+        raise ErroCarga("raw.vra: nenhum arquivo para carregar")
+    conferir_cabecalhos(arquivos)
+    return _criar_tabela(
+        con, "raw.vra", arquivos, OPCOES_VRA, PRIMEIRA_COLUNA_VRA, carregado_em or instante_carga()
+    )
+
+
+def carregar_aerodromos(
+    con: duckdb.DuckDBPyConnection, arquivo: Path, carregado_em: datetime | None = None
+) -> dict[str, int]:
+    """Recria `raw.aerodromos` (Latin-1, cabeçalho na linha 2)."""
+    return _criar_tabela(
+        con,
+        "raw.aerodromos",
+        [arquivo],
+        OPCOES_AERODROMOS,
+        PRIMEIRA_COLUNA_AERODROMOS,
+        carregado_em or instante_carga(),
+    )
+
+
 # --------------------------------------------------------------------------- orquestração
 
 
@@ -251,7 +353,28 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S")
     resumo = executar()
     print(f"Resumo: {resumo.baixados} baixados, {resumo.pulados} pulados, {resumo.falhas} falhas")
-    return 1 if resumo.falhas else 0
+    if resumo.falhas:
+        log.error("download com falhas: carga da raw não executada")
+        return 1
+
+    # Exatamente a lista de fontes(), nunca um glob da pasta.
+    lista = fontes()
+    vra = [f.caminho for f in lista if f.caminho.parent == config.DIR_RAW_VRA]
+    (aerodromos,) = [f.caminho for f in lista if f.caminho.parent == config.DIR_RAW_AERODROMOS]
+    carregado_em = instante_carga()  # um instante para a carga inteira
+    try:
+        with db.conectar() as con:
+            contagens = carregar_vra(con, vra, carregado_em)
+            contagens |= carregar_aerodromos(con, aerodromos, carregado_em)
+    except (ErroCarga, duckdb.Error) as e:
+        log.error("carga da raw: FALHA: %s", e)
+        return 1
+
+    for nome, linhas in contagens.items():
+        log.info("%s: %d linhas carregadas", nome, linhas)
+    log.info("raw.vra: %d linhas; raw.aerodromos: %d linhas", sum(contagens[a.name] for a in vra),
+             contagens[aerodromos.name])
+    return 0
 
 
 if __name__ == "__main__":

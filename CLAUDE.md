@@ -24,8 +24,12 @@ data/       gerado em runtime, NUNCA versionado (está no .gitignore)
 ## Formato real dos arquivos (medido, não suposto)
 
 **VRA** (`VRA_2025_MM.csv`)
-- Separador `;`, UTF-8, **cabeçalho na linha 1**.
-- Ausência de valor = campo vazio (não existe o texto literal `null`).
+- Separador `;`, UTF-8 puro (**sem BOM**), **cabeçalho na linha 1**.
+- O `;` no fim de cada linha é o `Codeshare` vazio, não uma 22ª coluna (21 colunas).
+- Ausência de valor = campo vazio (não existe o texto literal `null`); na raw, campo
+  vazio vira NULL.
+- Aspas são texto literal (ex.: nomes como `"DIAGORAS"`), nunca delimitador de campo:
+  a leitura usa `quote=''` e `escape=''`.
 - Datas: `%d/%m/%Y %H:%M`; `Referência` usa `%d/%m/%Y %H:%M:%S`.
 - `Número Voo` tem zero à esquerda (`0904`).
 - `Justificativa` vem 100% vazia: não construa nada sobre ela.
@@ -35,6 +39,8 @@ data/       gerado em runtime, NUNCA versionado (está no .gitignore)
   linha 2** (`skip=1`).
 - `LATGEOPOINT`/`LONGEOPOINT` usam ponto decimal; `Altitude` usa vírgula decimal.
 - `UF` vem por extenso ("Acre"), não como sigla.
+- Aspas são texto literal (segundos das coordenadas, ex.: `09°52'06"S`), nunca
+  delimitador de campo: a leitura usa `quote=''` e `escape=''`.
 
 ## Regras por camada
 
