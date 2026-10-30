@@ -44,7 +44,7 @@ data/       gerado em runtime, NUNCA versionado (está no .gitignore)
 - Adicione `_arquivo_origem` e `_carregado_em` em toda linha. Motivo: linhagem.
 - A raw nunca é alterada depois de carregada; recarregar = recriar a tabela inteira.
 - O download é idempotente: pula se o arquivo existe e o SHA-256 bate com o manifesto
-  (`data/manifesto.json`: URL, data, linhas, SHA-256). Retry com backoff em falha de
+  (data/manifesto.json: URL, data, tamanho, SHA-256, Last-Modified). Retry com backoff em falha de
   rede. Motivo: a ANAC republica arquivos antigos.
 
 **Refined**

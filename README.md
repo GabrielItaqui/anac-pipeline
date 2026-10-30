@@ -92,3 +92,4 @@ uv run pytest --cov
 | 2 | Horários ausentes vêm como o texto literal `null` | Vêm como campo vazio (0 ocorrências do texto `null`) | Consulta contando vazios × texto `null` por coluna |
 | 3 | Existe uma coluna de justificativa preenchida para os cancelamentos | `Justificativa` vem 100% vazia | Consulta agrupando por justificativa; o mart 03 foi redesenhado |
 | 4 | Filtrar `LIKE 'S%'` isola aeroportos brasileiros | Toda a América do Sul começa com S (SC = Chile, SA = Argentina...) | Lendo a descrição dos aeroportos no resultado |
+| 5 | A spec pedia "3 tentativas" com três esperas (2 s → 4 s → 8 s) | Três tentativas no total só têm duas esperas; a spec era internamente contraditória | O Claude Code apontou a ambiguidade na lista de premissas e implementou 1 tentativa + 3 novas |
