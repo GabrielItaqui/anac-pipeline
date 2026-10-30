@@ -202,7 +202,10 @@ PRIMEIRA_COLUNA_AERODROMOS = "Código OACI"
 
 # Opções fixas, sem depender do sniffer. quote='' porque nenhum arquivo usa aspas como
 # delimitador de campo: as que aparecem são literais (`"DIAGORAS"` no nome de aeroporto,
-# segundos em `09°52'06"S`). Sem ignore_errors: linha malformada derruba a carga.
+# segundos em `09°52'06"S`). Sem ignore_errors; e como o DuckDB tolera um `;` sobrando no
+# fim da linha, o número de separadores é conferido em Python antes (conferir_arquivo).
+ENCODING_VRA = "utf-8-sig"  # BOM, se aparecer, é descartado
+ENCODING_AERODROMOS = "latin-1"
 OPCOES_VRA = "delim=';', header=true, all_varchar=true, quote='', escape='', encoding='utf-8'"
 OPCOES_AERODROMOS = (
     "delim=';', header=true, skip=1, all_varchar=true, quote='', escape='', encoding='latin-1'"
@@ -218,17 +221,31 @@ def instante_carga() -> datetime:
     return datetime.now(UTC).replace(microsecond=0, tzinfo=None)
 
 
-def ler_cabecalho(caminho: Path) -> list[str]:
-    """Lê a primeira linha de um CSV do VRA (UTF-8, BOM descartado) e separa as colunas."""
-    with caminho.open(encoding="utf-8-sig", newline="") as f:
-        return f.readline().rstrip("\r\n").split(";")
+def conferir_arquivo(caminho: Path, encoding: str, pular: int = 0) -> list[str]:
+    """Lê o CSV uma vez: devolve o cabeçalho e exige que toda linha de dados tenha o mesmo
+    número de `;` que ele. Com quote='', todo `;` é separador, então a contagem é exata.
+
+    `pular` = linhas antes do cabeçalho. Os números de linha no erro são os do arquivo.
+    """
+    with caminho.open(encoding=encoding, newline="\n") as f:
+        for _ in range(pular):
+            f.readline()
+        cabecalho = f.readline().rstrip("\r\n")
+        esperado = cabecalho.count(";")
+        for numero, linha in enumerate(f, start=pular + 2):
+            encontrado = linha.count(";")
+            if encontrado != esperado:
+                raise ErroCarga(
+                    f"{caminho.name}: linha {numero} tem {encontrado} separadores ';', esperado {esperado}"
+                )
+    return cabecalho.split(";")
 
 
 def conferir_cabecalhos(arquivos: list[Path]) -> list[str]:
-    """Exige que todos os arquivos tenham o cabeçalho do primeiro; devolve esse cabeçalho."""
-    referencia = ler_cabecalho(arquivos[0])
+    """Confere cada arquivo do VRA e exige o cabeçalho do primeiro em todos; devolve esse cabeçalho."""
+    referencia = conferir_arquivo(arquivos[0], ENCODING_VRA)
     for arquivo in arquivos[1:]:
-        cabecalho = ler_cabecalho(arquivo)
+        cabecalho = conferir_arquivo(arquivo, ENCODING_VRA)
         if cabecalho == referencia:
             continue
         ausentes = [c for c in referencia if c not in cabecalho]
@@ -284,6 +301,7 @@ def carregar_aerodromos(
     con: duckdb.DuckDBPyConnection, arquivo: Path, carregado_em: datetime | None = None
 ) -> dict[str, int]:
     """Recria `raw.aerodromos` (Latin-1, cabeçalho na linha 2)."""
+    conferir_arquivo(arquivo, ENCODING_AERODROMOS, pular=1)
     return _criar_tabela(
         con,
         "raw.aerodromos",

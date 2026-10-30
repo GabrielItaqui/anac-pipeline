@@ -24,7 +24,7 @@ de aceite da anterior passam. Regras gerais: ver CLAUDE.md. Decisões: ver READM
 - **Commit:** `feat(ingestao): carga da camada raw com linhagem`
 
 ## Etapa 3 – Testes da ingestão
-- [ ] CSVs inventados em `tmp_path`: cabeçalho na linha 1 (VRA) e na linha 2
+- [x] CSVs inventados em `tmp_path`: cabeçalho na linha 1 (VRA) e na linha 2
   (aeródromos), Latin-1, zero à esquerda preservado, idempotência pelo hash
 - **Aceite:** `uv run pytest` verde, sem rede e sem abrir o banco real
 - **Commit:** `test(ingestao): testes de leitura, linhagem e idempotência`
