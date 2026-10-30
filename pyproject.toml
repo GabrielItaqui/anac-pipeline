@@ -1,0 +1,9 @@
+[project]
+name = "anac-pipeline"
+version = "0.1.0"
+description = "Pipeline de dados (raw → refined → marts) sobre a pontualidade da aviação doméstica brasileira em 2025, com dados abertos da ANAC."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "duckdb>=2.0.0",
+]
