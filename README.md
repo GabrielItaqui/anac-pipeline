@@ -73,6 +73,7 @@ Números medidos no arquivo de jan/2025 (89.616 linhas).
 | Deduplicação por empresa + voo + origem + partida prevista, só para voos com previsão | No ano inteiro há 59 chaves duplicadas, todas dentro do mesmo arquivo. O desempate é determinístico: arquivo de origem, depois partida real e chegada real mais cedo (vazio por último) e, por fim, a `Referência` mais cedo (uma duplicata só difere no dia da `Referência`). Aplicar a chave nos voos sem previsão apagaria voos reais diferentes |
 | Aeródromos sem cadastro aparecem como UF "Não cadastrado" | 5 aeródromos (provavelmente privados) somam 206 voos N (0,29%). LEFT JOIN para não perder voos |
 | Check de qualidade reconcilia nosso cálculo com a coluna `Situação Chegada` da ANAC (tolerância de 30 min) | A ANAC classifica com 30 min. Bater com ela prova que o cálculo de atraso está correto. Regra: Antecipado/Pontual = atraso ≤ 30 min. Medido em 949.842 voos: ≤ 30 concorda em 99,98% (202 divergências, todas "Pontual" com 31 min, provavelmente porque a ANAC calcula com segundos, que não existem no arquivo público); < 30 concorda em 99,64%. O check falha abaixo de 99,9% |
+| Atraso típico = mediana, não média | Há atrasos extremos, até 44.625 min (provavelmente erros de registro), que distorcem a média. A pontualidade não é afetada porque é sim/não |
 | Cancelamento por empresa, não por justificativa | A coluna `Justificativa` vem 100% vazia, inclusive nos cancelados |
 
 ## Como rodar do zero

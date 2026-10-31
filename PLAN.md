@@ -30,24 +30,24 @@ de aceite da anterior passam. Regras gerais: ver CLAUDE.md. Decisões: ver READM
 - **Commit:** `test(ingestao): testes de leitura, linhagem e idempotência`
 
 ## Etapa 4 – Refined
-- [ ] `refined.voos`: tipos, datas, `mes_referencia`, atraso de partida e de chegada
+- [x] `refined.voos`: tipos, datas, `mes_referencia`, atraso de partida e de chegada
   (min), flags `cancelado`, `sem_previsao`, `pontual_15`, deduplicação
-- [ ] `refined.aerodromos`: tipos, altitude com vírgula → número
+- [x] `refined.aerodromos`: tipos, altitude com vírgula → número
 - **Aceite:** nenhuma linha some sem explicação (raw − duplicatas = refined);
   `Número Voo` mantém o zero à esquerda
 - **Commit:** `feat(refined): voos e aeródromos tipados e deduplicados`
 
 ## Etapa 5 – Testes da refined
-- [ ] Atraso calculado, virada da meia-noite, voo sem previsão, cancelado, dedup que
+- [x] Atraso calculado, virada da meia-noite, voo sem previsão, cancelado, dedup que
   preserva voos sem previsão
 - **Commit:** `test(refined): regras de atraso, flags e deduplicação`
 
 ## Etapa 6 – Qualidade de dados
-- [ ] `Situação Voo` só tem REALIZADO ou CANCELADO
-- [ ] `Código OACI` é único em aeródromos
-- [ ] Sem duplicata pela chave natural no ano inteiro (vazamento entre arquivos)
-- [ ] Voos N sem aeródromo cadastrado ≤ 1%
-- [ ] Reconciliação: nossa classificação com 30 min × `Situação Chegada` da ANAC
+- [x] `Situação Voo` só tem REALIZADO ou CANCELADO
+- [x] `Código OACI` é único em aeródromos
+- [x] Sem duplicata pela chave natural no ano inteiro (vazamento entre arquivos)
+- [x] Voos N sem aeródromo cadastrado ≤ 1%
+- [x] Reconciliação: nossa classificação com 30 min × `Situação Chegada` da ANAC
   (limite de concordância definido após medir, e escrito no README)
 - **Aceite:** `pipeline.qualidade` para o pipeline com mensagem clara se um check falhar
 - **Commit:** `feat(qualidade): checks de dados antes dos marts`
