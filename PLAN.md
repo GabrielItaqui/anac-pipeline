@@ -74,9 +74,16 @@ de aceite da anterior passam. Regras gerais: ver CLAUDE.md. Decisões: ver READM
 - **Commit:** `ci: testes automáticos no GitHub Actions`
 
 ## Etapa 11 – README final
-- [ ] Rodar tudo do zero num clone limpo e corrigir o "Como rodar"
-- [ ] Resultados principais (números dos marts) e seção da IA completa
+- [x] Rodar tudo do zero num clone limpo e corrigir o "Como rodar"
+- [x] Resultados principais (números dos marts) e seção da IA completa
 - **Commit:** `docs: README final com resultados e erros da IA`
+
+## Etapa 12 (bônus) – Dashboard
+- [x] `dashboard/app.py`: Streamlit lendo só os marts (`read_only=True`), sem cálculo na tela
+- [x] Mensagem pedindo para rodar o pipeline se o banco ou os marts não existirem
+- [x] `tests/test_dashboard.py`: toda consulta usa `marts.`, sem `refined.` nem `raw.`
+- [x] Print em `docs/dashboard.png`
+- **Commit:** `feat(dashboard): painel Streamlit lendo só os marts`
 
 ## Cronograma (sexta, 30/10)
 - Manhã: etapas 1 a 5

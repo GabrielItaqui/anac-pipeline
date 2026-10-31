@@ -136,13 +136,31 @@ erro, e os 8 marts saíram idênticos, linha a linha, aos do banco de desenvolvi
 
 ## Testes
 
-- 64 testes unitários com pytest, cobertura de 78% do pacote `pipeline`.
+- 68 testes unitários com pytest (4 deles do dashboard), cobertura de 78% do pacote
+  `pipeline`.
 - Usam só dados inventados pequenos: os bancos são criados em memória (`:memory:`) e os
   arquivos em `tmp_path`. Nenhum teste abre o `data/anac.duckdb`.
 - Nenhum teste usa a rede: o [conftest.py](tests/conftest.py) faz qualquer acesso via
   `urllib` falhar.
 - A [CI](.github/workflows/ci.yml) roda os testes no GitHub Actions a cada push e pull
   request na `main` e falha se a cobertura ficar abaixo de 60%.
+
+## Dashboard (opcional)
+
+Painel Streamlit sobre os marts, em [dashboard/app.py](dashboard/app.py). Depois de rodar
+o pipeline:
+
+```powershell
+uv run --group dashboard streamlit run dashboard/app.py
+```
+
+**Regra:** o dashboard lê só do schema `marts` e não calcula nada na tela (sem soma,
+média ou percentual em Python); só ordena, renomeia e formata. Toda regra de negócio fica
+nos `.sql` dos marts, que são testados e versionados. O
+[test_dashboard.py](tests/test_dashboard.py) confere isso no código-fonte do app: toda
+consulta lê de `marts.`, sem `refined.` nem `raw.`.
+
+![Dashboard](docs/dashboard.png)
 
 ## Estrutura do repositório
 
@@ -153,6 +171,8 @@ sql/refined/     transformações da refined (voos, aeródromos)
 sql/qualidade/   checks de dados, um por arquivo
 sql/marts/       um .sql por indicador, com o grão na primeira linha
 tests/           testes unitários com dados inventados
+dashboard/       painel Streamlit opcional, lendo só os marts
+docs/            print do dashboard
 .github/         CI (GitHub Actions)
 data/            gerado em runtime, fora do git (CSVs, manifesto, anac.duckdb)
 ```
