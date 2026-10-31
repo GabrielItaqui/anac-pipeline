@@ -88,7 +88,8 @@ empresa e por aeroporto exigem pelo menos 1.000 voos no ano.
 
 ## Definições e decisões
 
-Números medidos no arquivo de jan/2025 (89.616 linhas).
+Números medidos no arquivo de jan/2025 (89.616 linhas), exceto onde a linha indica o
+ano inteiro.
 
 | Decisão | Motivo |
 |---|---|
@@ -96,6 +97,7 @@ Números medidos no arquivo de jan/2025 (89.616 linhas).
 | Cancelados ficam fora do denominador da pontualidade | Voo que não voou não pode chegar atrasado |
 | Realizados sem horário previsto (2.253, 2,6%) ficam fora da pontualidade e são contados à parte em `voos_sem_previsao` | Sem horário previsto não há atraso calculável. A própria ANAC também não os classifica |
 | Pontualidade calculada só para voos tipo `N` (doméstico); a refined guarda todos os tipos | Escopo da pergunta. O JOIN com aeródromos cobre 99,7% dos voos N, contra cerca de metade nos internacionais |
+| Voos sem tipo de linha ficam fora dos marts | No ano inteiro, 463 linhas da raw (0,05%) vêm com `Código Tipo Linha` vazio. Sem o tipo não dá para saber se são domésticas, e o escopo dos marts é tipo `N` |
 | Mês do voo = coluna `Referência` | É a atribuição da própria ANAC, nunca vem vazia e resolve os 21 voos que vazam para fevereiro |
 | Horários tratados como horário de Brasília, inclusive em aeroportos estrangeiros | Evidência: Miami → Galeão 01:10 → 09:25 só dá a duração real da rota (~8h) se os dois horários estiverem no mesmo fuso |
 | Raw toda em VARCHAR | `Número Voo` tem zero à esquerda (`0904`); ler como número apagaria o zero |
