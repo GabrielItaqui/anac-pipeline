@@ -113,8 +113,9 @@ c8.metric("Aeroportos de origem", inteiro(k["aeroportos_origem"]), border=True)
 
 # 2. Por mês
 st.header("Por mês")
-mensal = mensal.rename(
-    columns={"mes": "Mês", "pontualidade": "Pontualidade (%)", "taxa_cancelamento": "Cancelamento (%)"}
+# Mês como texto "MM/AAAA": ordena certo dentro do ano e não estica o eixo como uma data.
+mensal = mensal.assign(Mês=mensal["mes"].dt.strftime("%m/%Y")).rename(
+    columns={"pontualidade": "Pontualidade (%)", "taxa_cancelamento": "Cancelamento (%)"}
 )
 col_a, col_b = st.columns(2)
 with col_a:
@@ -155,10 +156,14 @@ with col_b:
 # 4. Por hora do dia
 st.header("Por hora do dia")
 st.caption("Hora da partida prevista (horário de Brasília).")
-st.line_chart(
-    por_hora.rename(columns={"hora": "Hora", "pontualidade": "Pontualidade (%)"}),
+# Hora como texto "00h" a "23h": as barras mostram as 24 horas, na ordem do mart.
+st.bar_chart(
+    por_hora.assign(Hora=por_hora["hora"].map("{:02d}h".format)).rename(
+        columns={"pontualidade": "Pontualidade (%)"}
+    ),
     x="Hora",
     y="Pontualidade (%)",
+    sort=False,
 )
 
 # 5. Tabelas
