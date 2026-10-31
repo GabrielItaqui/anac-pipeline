@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # setup-uv não publica tag móvel de versão maior: fixa a versão exata.
+      - uses: astral-sh/setup-uv@v10.3.3
+
+      # O uv lê o .python-version e instala o Python 3.13 sozinho.
+      - name: Instalar dependências
+        run: uv sync --locked
+
+      - name: Testes com cobertura
+        run: uv run pytest --cov=pipeline --cov-report=term-missing --cov-fail-under=60

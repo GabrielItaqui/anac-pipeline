@@ -1,5 +1,7 @@
 # Pontualidade da aviação doméstica brasileira em 2025
 
+[![CI](https://github.com/GabrielItaqui/anac-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/GabrielItaqui/anac-pipeline/actions/workflows/ci.yml)
+
 Pipeline de dados em três camadas (raw → refined → marts) com dados abertos da ANAC,
 construído com Python 3.13, uv e DuckDB. Desafio final do curso Pipeline Olist.
 
