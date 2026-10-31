@@ -8,14 +8,41 @@ construído com Python 3.13, uv e DuckDB. Desafio final do curso Pipeline Olist.
 **Pergunta de negócio:** quais empresas, aeroportos, horários e estados têm os voos
 mais pontuais (e os mais cancelados) na aviação doméstica brasileira em 2025?
 
+## Resultados
+
+Voos domésticos (tipo `N`) de 2025. Pontual = chegada com até 15 min de atraso (OTP15).
+Rankings por empresa só com empresas de pelo menos 1.000 voos no ano.
+
+- **Ano:** 804.857 voos programados e 790.792 realizados. **85,79%** dos 775.625 voos
+  avaliados chegaram no horário. **1,75%** foram cancelados (14.065). O atraso mediano de
+  chegada é **−5 min**: o voo típico chega 5 minutos antes do previsto.
+- **Pontualidade por empresa:** ATA Aerotáxi Abaeté 96,92%, GOL 88,51%, Azul 86,02%,
+  LATAM (TAM) 83,78%, Azul Conecta 80,84%, Sideral 74,83% e Passaredo 67,90%.
+- **Cancelamento por empresa:** ATA Aerotáxi Abaeté 12,75%, Azul Conecta 12,23%,
+  Passaredo 11,89%, Sideral 10,06%, LATAM (TAM) 1,68%, Azul 1,42% e GOL 1,05%.
+  As grandes cancelam menos de 2%; as regionais, mais de 10%. A ATA é ao mesmo tempo a
+  mais pontual e a que mais cancela.
+- **Rotas mais voadas:** Congonhas → Santos Dumont (18.169 voos, 88,40% pontual),
+  Santos Dumont → Congonhas (18.163, 90,14%) e Congonhas → Brasília (8.910, 83,55%).
+- **Estados:** os mais pontuais são Tocantins (93,68%), Acre (91,23%) e Piauí (90,01%).
+  Os menos pontuais são São Paulo (82,99%), Rondônia (83,10%) e Minas Gerais (84,48%).
+  São Paulo é a origem de um terço dos voos programados (263.054).
+- **Ao longo do dia:** a pontualidade cai conforme o dia avança. A melhor hora de partida
+  é 5h (93,77%) e a pior, 19h (80,95%). Das 4h às 6h fica acima de 93%; das 17h às 19h,
+  perto de 81%.
+- **Mês:** dezembro foi o pior mês, com 74,21% de pontualidade e 2,80% de cancelamento.
+
 ## Fonte dos dados
 
 | Tabela | Origem | Formato |
 |---|---|---|
-| VRA – Voo Regular Ativo (jan–dez/2025) | https://siros.anac.gov.br/siros/registros/diversos/vra/2025/ | 12 CSVs mensais (~310 MB) |
+| VRA – Voo Regular Ativo (jan–dez/2025) | https://siros.anac.gov.br/siros/registros/diversos/vra/2025/ | 12 CSVs mensais (~316 MB) |
 | Lista de aeródromos públicos | https://sistemas.anac.gov.br/dadosabertos/Aerodromos/Aer%C3%B3dromos%20P%C3%BAblicos/Lista%20de%20aer%C3%B3dromos%20p%C3%BAblicos/AerodromosPublicos.csv | 1 CSV |
 
-- **Licença:** dados abertos publicados pela ANAC. TODO: confirmar a licença exata no portal.
+- **Licença:** dados públicos publicados pela ANAC no âmbito da Política de Dados Abertos
+  do Poder Executivo federal (Decreto nº 8.777/2016). A ANAC descreve seus dados abertos
+  como livres de licença; não há licença Creative Commons específica no portal do VRA.
+  A fonte é sempre citada.
 - **Tipo de ingestão:** download batch via HTTP de arquivos publicados (não é uma API).
   Os dados **não são versionados** no repositório; são reproduzidos a partir da fonte
   oficial a cada execução.
@@ -45,16 +72,19 @@ arquivo a arquivo à contagem direta das quebras de linha dos CSVs.
 
 ## Indicadores (marts)
 
+Cada mart vira a tabela `marts.<nome>` e considera só voos tipo `N`. Os rankings por
+empresa e por aeroporto exigem pelo menos 1.000 voos no ano.
+
 | Mart | Grão (uma linha = ...) |
 |---|---|
-| 01_voos_mensais | um mês |
-| 02_pontualidade_por_empresa | uma empresa aérea |
-| 03_cancelamento_por_empresa | uma empresa aérea |
-| 04_atraso_por_aeroporto | um aeroporto de origem |
-| 05_rotas_mais_voadas | um par origem-destino |
-| 06_pontualidade_por_hora | uma hora do dia (partida prevista) |
-| 07_pontualidade_por_uf | uma UF de origem (usa o JOIN com aeródromos) |
-| 08_kpis | uma linha só (resumo do ano) |
+| [01_voos_mensais](sql/marts/01_voos_mensais.sql) | um mês de 2025 (`Referência`) |
+| [02_pontualidade_por_empresa](sql/marts/02_pontualidade_por_empresa.sql) | uma empresa aérea |
+| [03_cancelamento_por_empresa](sql/marts/03_cancelamento_por_empresa.sql) | uma empresa aérea |
+| [04_atraso_por_aeroporto](sql/marts/04_atraso_por_aeroporto.sql) | um aeroporto de origem |
+| [05_rotas_mais_voadas](sql/marts/05_rotas_mais_voadas.sql) | um par origem-destino (A→B e B→A são rotas diferentes; top 20) |
+| [06_pontualidade_por_hora](sql/marts/06_pontualidade_por_hora.sql) | uma hora do dia (0–23) da partida prevista |
+| [07_pontualidade_por_uf](sql/marts/07_pontualidade_por_uf.sql) | uma UF de origem (usa o JOIN com aeródromos) |
+| [08_kpis](sql/marts/08_kpis.sql) | o ano de 2025 inteiro (uma linha só) |
 
 ## Definições e decisões
 
@@ -80,20 +110,59 @@ Números medidos no arquivo de jan/2025 (89.616 linhas).
 
 ## Como rodar do zero
 
-TODO: confirmar ao final do projeto.
+Pré-requisitos: [git](https://git-scm.com/) e [uv](https://docs.astral.sh/uv/). O uv lê o
+`.python-version` e instala o Python 3.13 sozinho.
 
 ```powershell
-git clone https://github.com/<usuario>/anac-pipeline.git
+git clone https://github.com/GabrielItaqui/anac-pipeline.git
 cd anac-pipeline
 uv sync
 uv run python -m pipeline.ingestao
 uv run python -m pipeline.transformacao
-uv run python -m pipeline.qualidade
 uv run python -m pipeline.marts
-uv run pytest --cov
+uv run pytest --cov=pipeline
+```
+
+- `pipeline.ingestao` baixa 13 arquivos (~316 MB) para `data/raw/` e carrega a raw. Levou
+  cerca de 2 min; o tempo depende da conexão com os servidores da ANAC. Rodar de novo não
+  baixa outra vez o que já bate com o manifesto.
+- `pipeline.transformacao` cria a refined (poucos segundos).
+- `pipeline.marts` roda os checks de qualidade antes e só cria os marts se todos passarem.
+  Para ver o resultado de cada check: `uv run python -m pipeline.qualidade`.
+- No fim, `data/` ocupa cerca de 450 MB (CSVs + `data/anac.duckdb`, ~140 MB).
+
+Procedimento validado num clone limpo em 30/10/2026: todos os comandos acima rodaram sem
+erro, e os 8 marts saíram idênticos, linha a linha, aos do banco de desenvolvimento.
+
+## Testes
+
+- 64 testes unitários com pytest, cobertura de 78% do pacote `pipeline`.
+- Usam só dados inventados pequenos: os bancos são criados em memória (`:memory:`) e os
+  arquivos em `tmp_path`. Nenhum teste abre o `data/anac.duckdb`.
+- Nenhum teste usa a rede: o [conftest.py](tests/conftest.py) faz qualquer acesso via
+  `urllib` falhar.
+- A [CI](.github/workflows/ci.yml) roda os testes no GitHub Actions a cada push e pull
+  request na `main` e falha se a cobertura ficar abaixo de 60%.
+
+## Estrutura do repositório
+
+```
+pipeline/        um módulo por etapa: ingestao, transformacao, qualidade, marts
+                 (+ config.py com URLs e caminhos, db.py com a conexão)
+sql/refined/     transformações da refined (voos, aeródromos)
+sql/qualidade/   checks de dados, um por arquivo
+sql/marts/       um .sql por indicador, com o grão na primeira linha
+tests/           testes unitários com dados inventados
+.github/         CI (GitHub Actions)
+data/            gerado em runtime, fora do git (CSVs, manifesto, anac.duckdb)
 ```
 
 ## Onde a IA errou ou assumiu algo (e como descobrimos)
+
+O projeto foi feito com o Claude Code. As regras fixas (formatos reais dos arquivos,
+regras de cada camada, testes, git) ficaram no [CLAUDE.md](CLAUDE.md), e cada etapa teve
+uma spec própria. Antes de codar, a IA listava as premissas que estava assumindo, e cada
+uma foi conferida contra os dados reais. A tabela registra o que estava errado.
 
 | # | O que a IA assumiu | O que era verdade | Como foi descoberto |
 |---|---|---|---|

@@ -53,23 +53,23 @@ de aceite da anterior passam. Regras gerais: ver CLAUDE.md. Decisões: ver READM
 - **Commit:** `feat(qualidade): checks de dados antes dos marts`
 
 ## Etapa 7 – Marts 01 a 04
-- [ ] 01_voos_mensais, 02_pontualidade_por_empresa, 03_cancelamento_por_empresa,
+- [x] 01_voos_mensais, 02_pontualidade_por_empresa, 03_cancelamento_por_empresa,
   04_atraso_por_aeroporto. Grão na primeira linha de cada .sql
 - **Commit:** `feat(marts): volume, pontualidade, cancelamento e atraso por aeroporto`
 
 ## Etapa 8 – Marts 05 a 08
-- [ ] 05_rotas_mais_voadas, 06_pontualidade_por_hora, 07_pontualidade_por_uf (JOIN),
+- [x] 05_rotas_mais_voadas, 06_pontualidade_por_hora, 07_pontualidade_por_uf (JOIN),
   08_kpis
 - **Commit:** `feat(marts): rotas, horário, UF e KPIs`
 
 ## Etapa 9 – Testes dos marts
-- [ ] Base inventada pequena com resultado calculado à mão (ex.: 2 de 3 pontuais = 66.67)
-- [ ] Cancelados e sem previsão fora do denominador; UF "Não cadastrado" no mart 07
+- [x] Base inventada pequena com resultado calculado à mão (ex.: 2 de 3 pontuais = 66.67)
+- [x] Cancelados e sem previsão fora do denominador; UF "Não cadastrado" no mart 07
 - **Aceite:** coverage ≥ 60%
 - **Commit:** `test(marts): indicadores com dados inventados`
 
 ## Etapa 10 – CI
-- [ ] `.github/workflows/ci.yml`: uv sync + pytest --cov a cada push
+- [x] `.github/workflows/ci.yml`: uv sync + pytest --cov a cada push
 - **Aceite:** badge verde no GitHub
 - **Commit:** `ci: testes automáticos no GitHub Actions`
 
